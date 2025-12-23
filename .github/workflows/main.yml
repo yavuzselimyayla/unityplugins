@@ -1,0 +1,38 @@
+name: Manual Build Main (Force)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-plugins:
+    # "macos-latest" bazen bir önceki sürümde kalabiliyor. 
+    # Kod main branch olduğu için en yeni SDK'lar gerektiriyor, bu yüzden "macos-15" zorluyoruz.
+    runs-on: macos-15
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    
+    # En güncel Xcode'un seçili olduğundan emin olalım
+    - name: Select Latest Xcode
+      run: |
+        sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+        xcodebuild -version
+
+    # Scripti çalıştırırken "yes" komutunu pipe (|) ile bağlıyoruz.
+    # Böylece script hata alıp "Devam edeyim mi?" diye sorarsa otomatik "y" basılmış oluyor.
+    - name: Run Build Script
+      run: |
+        yes | python3 build.py -p Core GameKit --no-color -o ./BuildOutput
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: AppleUnityPlugins-Main-Packages
+        path: ./BuildOutput/*.tgz
+        if-no-files-found: warn
